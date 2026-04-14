@@ -1,0 +1,43 @@
+name: Build and Deploy to Cloud Run
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: 'read'
+  id-token: 'write'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Google Auth
+        uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: 'projects/980356589773/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          service_account: 'github-action-deployer@project-3df7bd02-6b4b-4824-979.iam.gserviceaccount.com'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Authorize Docker
+        run: gcloud auth configure-docker europe-west1-docker.pkg.dev
+
+      - name: Build and Push Container
+        run: |
+          docker build -t europe-west1-docker.pkg.dev/project-3df7bd02-6b4b-4824-979/cloud-run-source-deploy/${{ github.event.repository.name }}:latest .
+          docker push europe-west1-docker.pkg.dev/project-3df7bd02-6b4b-4824-979/cloud-run-source-deploy/${{ github.event.repository.name }}:latest
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ github.event.repository.name }} \
+            --image europe-west1-docker.pkg.dev/project-3df7bd02-6b4b-4824-979/cloud-run-source-deploy/${{ github.event.repository.name }}:latest \
+            --region europe-west1 \
+            --memory 1Gi \
+            --platform managed \
+            --allow-unauthenticated \
+            --quiet
