@@ -1,14 +1,18 @@
-name: Trigger Deploy
+name: Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+
+# BURASI EKSİK: Çağıran workflow'un yetki alabilmesi için burada da tanımlı olmalı
+permissions:
+  contents: 'read'
+  id-token: 'write'
 
 jobs:
-  call-central-workflow:
-    # Organizasyon ismin ve merkezi reponun yolu
+  call-central-deploy:
     uses: LetStartCCorp/.github/.github/workflows/central-deploy.yml@main
     with:
-      # Reponun adını dinamik olarak merkezi workflow'a gönderir
-      service_name: ${{ github.event.repository.name }}
-    secrets: inherit # Org bazlı secret'ları içeri aktarır
+      service_name: 'e-test-pack'
+    secrets: inherit # Secret'ları (CF_API_TOKEN vs.) aktarması için bu şart
