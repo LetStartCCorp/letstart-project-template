@@ -1,4 +1,4 @@
-import { letstartMiddleware } from "@letstart/setup/middleware";
+import { letstartMiddleware } from "@letstartccorp/setup/middleware";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
