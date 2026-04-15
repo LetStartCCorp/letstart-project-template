@@ -3,7 +3,7 @@ import path from "path";
 
 export default function SetupPage() {
   const html = fs.readFileSync(
-    path.join(process.cwd(), "node_modules", "@letstart", "setup", "wizard.html"),
+    path.join(process.cwd(), "node_modules", "@letstartccorp", "setup", "wizard.html"),
     "utf-8",
   );
 
