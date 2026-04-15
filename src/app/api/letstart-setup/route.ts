@@ -1,1 +1,1 @@
-export { GET, POST } from "@letstart/setup/handler";
+export { GET, POST } from "@letstartccorp/setup/handler";
