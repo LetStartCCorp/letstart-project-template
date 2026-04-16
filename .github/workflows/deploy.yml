@@ -2,17 +2,16 @@ name: Deploy
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
-# BURASI EKSİK: Çağıran workflow'un yetki alabilmesi için burada da tanımlı olmalı
 permissions:
-  contents: 'read'
-  id-token: 'write'
+  contents: read
+  id-token: write
+  packages: read
 
 jobs:
-  call-central-deploy:
+  deploy:
     uses: LetStartCCorp/.github/.github/workflows/central-deploy.yml@main
     with:
       service_name: 'e-test-pack'
-    secrets: inherit # Secret'ları (CF_API_TOKEN vs.) aktarması için bu şart
+    secrets: inherit
