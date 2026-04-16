@@ -2,8 +2,11 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-RUN npm install --ignore-scripts
+COPY .npmrc package.json package-lock.json* ./
+ARG NPM_TOKEN=""
+RUN if [ -n "$NPM_TOKEN" ]; then echo "//npm.pkg.github.com/:_authToken=${NPM_TOKEN}" >> .npmrc; fi && \
+    npm install --ignore-scripts && \
+    rm -f .npmrc
 
 COPY prisma ./prisma
 RUN npx prisma generate
