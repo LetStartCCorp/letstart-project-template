@@ -33,10 +33,15 @@ function cleanupExpiredStates() {
 }
 
 function getOrigin(request: NextRequest): string {
-  // Cloud Run / reverse proxy: use forwarded headers
-  const proto = request.headers.get('x-forwarded-proto') || 'https';
-  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
-  if (host) return `${proto}://${host}`;
+  // 1. Explicit env var (most reliable behind reverse proxies)
+  if (process.env.LETSTART_APP_URL) return process.env.LETSTART_APP_URL.replace(/\/$/, '');
+  // 2. Cloudflare / reverse proxy forwarded headers
+  const fwdHost = request.headers.get('x-forwarded-host');
+  if (fwdHost) {
+    const proto = request.headers.get('x-forwarded-proto') || 'https';
+    return `${proto}://${fwdHost}`;
+  }
+  // 3. Fallback to request origin
   return request.nextUrl.origin;
 }
 
