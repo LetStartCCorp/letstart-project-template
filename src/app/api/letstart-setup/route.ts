@@ -15,6 +15,18 @@ function getProjectId() {
 export async function GET(request: NextRequest) {
   const action = request.nextUrl.searchParams.get('action');
 
+  // Proxy: redirect to Supabase OAuth connect on the backend
+  if (action === 'supabase-connect') {
+    if (!getProjectId() || !getApiUrl()) {
+      return NextResponse.json(
+        { error: 'API not configured. Backend not deployed yet.' },
+        { status: 503 },
+      );
+    }
+    const url = `${getApiUrl()}/api/v1/integrations/supabase/connect/${getProjectId()}`;
+    return NextResponse.redirect(url);
+  }
+
   // Proxy Supabase provisioning status (avoids CORS issues)
   if (action === 'supabase-status') {
     if (!getProjectId() || !getApiUrl()) {
