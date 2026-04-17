@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 function getApiUrl() {
-  return process.env.LETSTART_API_URL || 'https://api.letstart.io';
+  return process.env.LETSTART_API_URL || '';
 }
 
 function getProjectId() {
