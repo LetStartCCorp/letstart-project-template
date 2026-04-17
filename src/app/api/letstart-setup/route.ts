@@ -256,7 +256,12 @@ export async function GET(request: NextRequest) {
       code_challenge_method: 'S256',
       state: statePayload,
     });
-    return NextResponse.redirect(`${SUPABASE_API}/v1/oauth/authorize?${params}`);
+
+    // Use JS redirect instead of HTTP 307 — Cloudflare proxy follows 307 and returns
+    // the target page directly, breaking the OAuth flow for the browser.
+    const targetUrl = `${SUPABASE_API}/v1/oauth/authorize?${params}`;
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=${targetUrl}"><title>Redirecting…</title></head><body style="background:#0a0a0a;color:#888;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh"><p>Redirecting to Supabase…</p><script>window.location.replace(${JSON.stringify(targetUrl)});</script></body></html>`;
+    return new NextResponse(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
   }
 
   // ── Default: return config ─────────────────────────────────
