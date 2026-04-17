@@ -119,39 +119,10 @@ export async function GET(request: NextRequest) {
   const action = request.nextUrl.searchParams.get('action');
   const projectId = getProjectId();
 
-  // ── Supabase Connect: initiate OAuth directly ───────────────
-  if (action === 'supabase-connect') {
-    if (!projectId) {
-      return NextResponse.json({ error: 'LETSTART_PROJECT_ID not configured' }, { status: 503 });
-    }
-
-    cleanupExpiredStates();
-    const state = crypto.randomBytes(24).toString('base64url');
-    const { verifier, challenge } = generatePKCE();
-    oauthStates.set(state, { projectId, verifier, createdAt: Date.now() });
-
-    const origin = request.nextUrl.origin;
-    const redirectUri = `${origin}/api/letstart-setup?action=supabase-callback`;
-
-    const params = new URLSearchParams({
-      client_id: SUPABASE_CLIENT_ID,
-      redirect_uri: redirectUri,
-      response_type: 'code',
-      code_challenge: challenge,
-      code_challenge_method: 'S256',
-      state,
-    });
-    return NextResponse.redirect(`${SUPABASE_API}/v1/oauth/authorize?${params}`);
-  }
-
-  // ── Supabase Callback: exchange code for tokens ─────────────
-  if (action === 'supabase-callback') {
-    const code = request.nextUrl.searchParams.get('code');
-    const state = request.nextUrl.searchParams.get('state');
-    if (!code || !state) {
-      return new NextResponse(popupHtml('error', 'Missing code or state'), { headers: { 'Content-Type': 'text/html' } });
-    }
-
+  // ── Supabase Callback: detect by code+state params ─────────
+  const code = request.nextUrl.searchParams.get('code');
+  const state = request.nextUrl.searchParams.get('state');
+  if (code && state) {
     const stored = oauthStates.get(state);
     if (!stored) {
       return new NextResponse(popupHtml('error', 'Invalid or expired OAuth state'), { headers: { 'Content-Type': 'text/html' } });
@@ -159,7 +130,7 @@ export async function GET(request: NextRequest) {
     oauthStates.delete(state);
 
     const origin = request.nextUrl.origin;
-    const redirectUri = `${origin}/api/letstart-setup?action=supabase-callback`;
+    const redirectUri = `${origin}/api/letstart-setup`;
 
     const tokenResp = await fetch(`${SUPABASE_API}/v1/oauth/token`, {
       method: 'POST',
@@ -190,6 +161,31 @@ export async function GET(request: NextRequest) {
     provisionProject(tokens.access_token, stored.projectId);
 
     return new NextResponse(popupHtml('provisioning', 'Connected! Creating your database...'), { headers: { 'Content-Type': 'text/html' } });
+  }
+
+  // ── Supabase Connect: initiate OAuth directly ───────────────
+  if (action === 'supabase-connect') {
+    if (!projectId) {
+      return NextResponse.json({ error: 'LETSTART_PROJECT_ID not configured' }, { status: 503 });
+    }
+
+    cleanupExpiredStates();
+    const connectState = crypto.randomBytes(24).toString('base64url');
+    const { verifier, challenge } = generatePKCE();
+    oauthStates.set(connectState, { projectId, verifier, createdAt: Date.now() });
+
+    const origin = request.nextUrl.origin;
+    const redirectUri = `${origin}/api/letstart-setup`;
+
+    const params = new URLSearchParams({
+      client_id: SUPABASE_CLIENT_ID,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      code_challenge: challenge,
+      code_challenge_method: 'S256',
+      state: connectState,
+    });
+    return NextResponse.redirect(`${SUPABASE_API}/v1/oauth/authorize?${params}`);
   }
 
   // ── Supabase Status: check provisioning progress ────────────
