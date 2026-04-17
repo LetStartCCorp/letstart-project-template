@@ -32,6 +32,14 @@ function cleanupExpiredStates() {
   }
 }
 
+function getOrigin(request: NextRequest): string {
+  // Cloud Run / reverse proxy: use forwarded headers
+  const proto = request.headers.get('x-forwarded-proto') || 'https';
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
+  if (host) return `${proto}://${host}`;
+  return request.nextUrl.origin;
+}
+
 function popupHtml(statusVal: string, message: string): string {
   return `<!DOCTYPE html>
 <html><head><title>LetStart — Supabase</title></head>
@@ -129,7 +137,7 @@ export async function GET(request: NextRequest) {
     }
     oauthStates.delete(state);
 
-    const origin = request.nextUrl.origin;
+    const origin = getOrigin(request);
     const redirectUri = `${origin}/api/letstart-setup`;
 
     const tokenResp = await fetch(`${SUPABASE_API}/v1/oauth/token`, {
@@ -174,7 +182,7 @@ export async function GET(request: NextRequest) {
     const { verifier, challenge } = generatePKCE();
     oauthStates.set(connectState, { projectId, verifier, createdAt: Date.now() });
 
-    const origin = request.nextUrl.origin;
+    const origin = getOrigin(request);
     const redirectUri = `${origin}/api/letstart-setup`;
 
     const params = new URLSearchParams({
@@ -200,6 +208,7 @@ export async function GET(request: NextRequest) {
     project_id: projectId,
     has_api_url: !!getApiUrl(),
     api_url: getApiUrl(),
+    origin: getOrigin(request),
   });
 }
 
