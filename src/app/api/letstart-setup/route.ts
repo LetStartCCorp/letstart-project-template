@@ -208,15 +208,11 @@ export async function GET(request: NextRequest) {
   }
 
   // ── Default: return config ──────────────────────────────────
-  const headers: Record<string, string> = {};
-  request.headers.forEach((v, k) => { if (k.startsWith('x-') || k === 'host' || k === 'forwarded' || k.includes('forward')) headers[k] = v; });
   return NextResponse.json({
     configured: process.env.LETSTART_SETUP_COMPLETE === 'true',
     project_id: projectId,
     has_api_url: !!getApiUrl(),
     api_url: getApiUrl(),
-    origin: getOrigin(request),
-    _debug_headers: headers,
   });
 }
 
