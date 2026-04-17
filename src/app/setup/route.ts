@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 
-const html = `<!DOCTYPE html>
+const HTML = `<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
@@ -240,30 +240,42 @@ const html = `<!DOCTYPE html>
     if (!letstartProjectId) { showError('Cannot connect: missing project configuration.'); return; }
     const popup = window.open(\`\${API_PATH}?action=supabase-connect\`, 'supabase-oauth', 'width=600,height=700,left=200,top=100');
     if (!popup) { showError('Popup blocked — please allow popups.'); return; }
+
+    // Show connecting state immediately
+    const ca = document.getElementById('supabaseConnectArea');
+    const sd = document.getElementById('supabaseStatus');
+    const st = document.getElementById('supabaseStatusText');
+    const pb = document.getElementById('supabaseProgress');
+    ca.classList.add('hidden'); sd.classList.remove('hidden');
+    st.textContent = 'Connecting to Supabase...'; pb.style.width = '30%';
+
+    let handled = false;
+
+    // Detect popup closed without completing
+    const checkClosed = setInterval(function() {
+      if (popup.closed && !handled) {
+        clearInterval(checkClosed);
+        sd.classList.add('hidden'); ca.classList.remove('hidden');
+      }
+    }, 1500);
+
     window.addEventListener('message', function h(ev) {
       if (ev.data?.type !== 'supabase-oauth') return;
       window.removeEventListener('message', h);
-      if (ev.data.status === 'error') { showError(ev.data.message); return; }
-      startSupabasePolling();
-    });
-  }
+      handled = true; clearInterval(checkClosed);
 
-  async function startSupabasePolling() {
-    const ca = document.getElementById('supabaseConnectArea'), sd = document.getElementById('supabaseStatus'), st = document.getElementById('supabaseStatusText'), pb = document.getElementById('supabaseProgress');
-    ca.classList.add('hidden'); sd.classList.remove('hidden');
-    const m = { listing_orgs:['Finding organization...','15%'], creating_project:['Creating database...','35%'], waiting_for_db:['Waiting for database (~1 min)...','60%'], fetching_keys:['Fetching API keys...','85%'] };
-    for (let i = 0; i < 60; i++) {
-      try {
-        const r = await fetch(\`\${API_PATH}?action=supabase-status\`);
-        if (!r.ok) throw 0;
-        const d = await r.json();
-        if (d.status === 'ready') { supabaseResult = d; pb.style.width = '100%'; setTimeout(() => onSupabaseReady(d), 400); return; }
-        if (d.status === 'error') { sd.classList.add('hidden'); ca.classList.remove('hidden'); showError(d.error || 'Setup failed'); return; }
-        if (m[d.status]) { st.textContent = m[d.status][0]; pb.style.width = m[d.status][1]; }
-      } catch(e) {}
-      await new Promise(r => setTimeout(r, 3000));
-    }
-    sd.classList.add('hidden'); ca.classList.remove('hidden'); showError('Provisioning timed out.');
+      if (ev.data.status === 'error') {
+        sd.classList.add('hidden'); ca.classList.remove('hidden');
+        showError(ev.data.message || 'Connection failed');
+        return;
+      }
+      if (ev.data.status === 'ready' && ev.data.data) {
+        supabaseResult = ev.data.data;
+        pb.style.width = '100%'; st.textContent = 'Database created!';
+        setTimeout(function() { onSupabaseReady(ev.data.data); }, 500);
+        return;
+      }
+    });
   }
 
   function onSupabaseReady(d) {
@@ -303,7 +315,7 @@ const html = `<!DOCTYPE html>
 </html>`;
 
 export async function GET() {
-  return new NextResponse(html, {
-    headers: { "Content-Type": "text/html; charset=utf-8" },
+  return new NextResponse(HTML, {
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
   });
 }
