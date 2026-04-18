@@ -34,5 +34,4 @@ COPY --from=builder /app/.env* ./
 USER nextjs
 EXPOSE 8080
 
-# Load env files before starting (standalone server.js does not load .env)
-CMD ["sh", "-c", "set -a; [ -f .env ] && . ./.env; [ -f .env.local ] && . ./.env.local; [ -f .env.production.local ] && . ./.env.production.local; set +a; exec node server.js"]
+CMD ["node", "server.js"]
