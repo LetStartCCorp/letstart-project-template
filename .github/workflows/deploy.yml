@@ -13,5 +13,5 @@ jobs:
   deploy:
     uses: LetStartCCorp/.github/.github/workflows/central-deploy.yml@main
     with:
-      service_name: 'e-test-pack'
+      service_name: 'letstart-project-template'
     secrets: inherit
