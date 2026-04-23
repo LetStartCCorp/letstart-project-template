@@ -46,8 +46,12 @@ check(mwPath, 'Middleware file', (c) => {
 // 3. Setup page exists?
 check('src/app/setup/page.tsx', 'Setup wizard page');
 
-// 4. API route exists?
-check('src/app/api/letstart-setup/route.ts', 'Setup API route');
+// 4. API route exists AND has correct handler import?
+check('src/app/api/letstart-setup/route.ts', 'Setup API route', (c) => {
+  if (!c.includes('@letstartccorp/setup/handler')) {
+    return 'Must re-export from @letstartccorp/setup/handler. An AI agent may have replaced it with a stub!';
+  }
+});
 
 // 5. .npmrc exists?
 check('.npmrc', 'GitHub Packages registry config', (c) => {
@@ -65,6 +69,13 @@ check('package.json', 'package.json', (c) => {
     }
   } catch {
     return 'Cannot parse package.json';
+  }
+});
+
+// 7. .env.local exists with LETSTART_PROJECT_ID?
+check('.env.local', 'LetStart bootstrap config (.env.local)', (c) => {
+  if (!c.includes('LETSTART_PROJECT_ID')) {
+    return 'Missing LETSTART_PROJECT_ID. The bootstrap config was deleted or corrupted!';
   }
 });
 
