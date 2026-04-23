@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -p 8080",
-    "build": "npx prisma generate && next build",
+    "build": "node scripts/check-setup.mjs && npx prisma generate && next build",
     "start": "next start -p 8080",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev"
@@ -14,7 +14,7 @@
     "next": "^15.3.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "@letstartccorp/setup": "^0.3.2"
+    "@letstartccorp/setup": "^0.3.3"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
