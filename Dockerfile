@@ -34,4 +34,5 @@ COPY --from=builder /app/.env* ./
 USER nextjs
 EXPOSE 8080
 
-CMD ["node", "server.js"]
+# Source .env.local at runtime — Next.js standalone does NOT read dotenv files.
+CMD ["sh", "-c", "if [ -f .env.local ]; then set -a && . ./.env.local && set +a; fi && node server.js"]
